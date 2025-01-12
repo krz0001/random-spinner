@@ -1,0 +1,54 @@
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    overflow: hidden;
+}
+
+.top-bar {
+    background-color: #0a6e89;
+    color: white;
+    padding: 5px 7px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-field {
+    padding: 7px;
+    border: none;
+    border-radius: 4px;
+    background-color: #f3f3f3;
+    width: 30ch;
+    height: 2.5ch;
+}
+
+#loader {
+    display: none;
+    position: fixed;
+    left: 7vw;
+    top: 13vh;
+    transform: translate(-50%, -50%);
+    border: 3vw solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 3vw solid #0a6e89;
+    width: auto;
+    height: 65vh;
+    animation: spin 2s linear infinite;
+    aspect-ratio: 1;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.cursor {
+    width: 35px;
+    height: 35px;
+    background-image: url('./cursor.svg');
+    background-size: cover;
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    transition: all 0.2s;
+}

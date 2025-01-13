@@ -1,12 +1,18 @@
-document.addEventListener('click', function() {
+document.addEventListener("DOMContentLoaded", function() {
     const loader = document.getElementById('loader');
-    loader.style.display = 'block';
 
-    const randomTime = Math.floor(Math.random() * 5000) + 1000; // Random time between 1 and 6 seconds
+    function toggleLoader() {
+        const isVisible = loader.style.display === 'block';
+        loader.style.display = isVisible ? 'none' : 'block';
+    }
 
-    setTimeout(function() {
-        loader.style.display = 'none';
-    }, randomTime);
+    function randomToggleLoader() {
+        toggleLoader();
+        const randomInterval = Math.random() * 5000 + 1000; // Random interval between 1 and 6 seconds
+        setTimeout(randomToggleLoader, randomInterval);
+    }
+
+    randomToggleLoader();
 });
 
 

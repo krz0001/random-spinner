@@ -1,0 +1,23 @@
+{
+  "id": "random-spinner",
+  "name": "Random Spinner",
+  "short_name": "Spinner",
+  "description": "A simple random spinner app.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "theme_color": "#0a6e89",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "assets/cursor.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+

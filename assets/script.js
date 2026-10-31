@@ -36,10 +36,10 @@ function createSpinnerMode() {
     };
 }
 
-// Mode switching: a random different mode every 15 minutes.
+// Mode switching: a random different mode every 2 minutes.
 // Debug helpers: ?mode=lasers|strings|spinner pins a mode, ?interval=<seconds> changes the delay.
 (function () {
-    const SWITCH_SECONDS = 15 * 60;
+    const SWITCH_SECONDS = 2 * 60;
     const arenaCanvas = document.getElementById('arena');
 
     const modes = {

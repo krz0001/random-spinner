@@ -222,10 +222,31 @@
 
     const LASER_HUES = [0, 0, 0, 120, 170, 200, 280, 320, 55]; // red is over-represented on purpose
     const TRAIL_LIFE = 0.4;
+    const TRAIL_BUCKETS = 5; // trail is drawn in a few batched strokes instead of one per segment
+
+    // Pre-rendered glow so the head costs one drawImage instead of a blurred arc
+    const glowSprites = {};
+    function glowSprite(hue) {
+        if (glowSprites[hue]) return glowSprites[hue];
+        const size = 128;
+        const sprite = document.createElement('canvas');
+        sprite.width = sprite.height = size;
+        const g = sprite.getContext('2d');
+        const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(0.12, '#fff');
+        grad.addColorStop(0.3, `hsla(${hue}, 100%, 55%, 0.9)`);
+        grad.addColorStop(1, `hsla(${hue}, 100%, 55%, 0)`);
+        g.fillStyle = grad;
+        g.fillRect(0, 0, size, size);
+        glowSprites[hue] = sprite;
+        return sprite;
+    }
 
     const lasers = {
         margin: () => 60,
         sway: { amp: 1, freq: 1 }, // hold jitter: small and fast
+        maxDpr: 1, // low-end tablets: never render above CSS resolution
         speed: 1,
         max: 2,
         gap: [0.4, 3.5],
@@ -239,53 +260,56 @@
 
         update(a, now) {
             if (a.delay > 0) return;
-            if (!a.finished) a.trail.push({ x: a.x, y: a.y, t: now });
-            while (a.trail.length && now - a.trail[0].t > TRAIL_LIFE) a.trail.shift();
-            if (a.finished && !a.trail.length) a.dead = true;
+            const tr = a.trail;
+            if (!a.finished) {
+                const last = tr[tr.length - 1];
+                if (last && Math.hypot(a.x - last.x, a.y - last.y) < 1.5) {
+                    last.t = now; // not moving: refresh instead of piling up points
+                } else {
+                    tr.push({ x: a.x, y: a.y, t: now });
+                }
+            }
+            while (tr.length && now - tr[0].t > TRAIL_LIFE) tr.shift();
+            if (a.finished && !tr.length) a.dead = true;
         },
 
+        // No shadowBlur and no blend modes: both are very slow on weak GPUs
         draw(c, a, env, now) {
             const tr = a.trail;
             if (!tr.length) return;
-            const color = `hsl(${a.hue}, 100%, 55%)`;
             c.lineCap = 'round';
             c.lineJoin = 'round';
-            c.globalCompositeOperation = 'lighter';
 
-            for (let i = 1; i < tr.length; i++) {
-                const life = 1 - (now - tr[i].t) / TRAIL_LIFE;
-                if (life <= 0) continue;
-                c.beginPath();
-                c.moveTo(tr[i - 1].x, tr[i - 1].y);
-                c.lineTo(tr[i].x, tr[i].y);
-                c.strokeStyle = `hsla(${a.hue}, 100%, 55%, ${life})`;
-                c.shadowColor = color;
-                c.shadowBlur = 22;
-                c.lineWidth = a.size * 2.2 * life;
-                c.stroke();
-                // Hot white core
-                c.shadowBlur = 0;
-                c.strokeStyle = `rgba(255, 255, 255, ${life})`;
-                c.lineWidth = a.size * 0.8 * life;
-                c.stroke();
+            if (tr.length > 1) {
+                for (let b = 0; b < TRAIL_BUCKETS; b++) {
+                    const life = (b + 0.5) / TRAIL_BUCKETS;
+                    c.beginPath();
+                    let any = false;
+                    for (let i = 1; i < tr.length; i++) {
+                        const l = 1 - (now - tr[i].t) / TRAIL_LIFE;
+                        if (l <= 0 || Math.min(Math.floor(l * TRAIL_BUCKETS), TRAIL_BUCKETS - 1) !== b) continue;
+                        c.moveTo(tr[i - 1].x, tr[i - 1].y);
+                        c.lineTo(tr[i].x, tr[i].y);
+                        any = true;
+                    }
+                    if (!any) continue;
+                    // Soft outer glow, saturated body, hot white core
+                    c.strokeStyle = `hsla(${a.hue}, 100%, 55%, ${life * 0.3})`;
+                    c.lineWidth = a.size * 5 * life;
+                    c.stroke();
+                    c.strokeStyle = `hsla(${a.hue}, 100%, 55%, ${life})`;
+                    c.lineWidth = a.size * 2.2 * life;
+                    c.stroke();
+                    c.strokeStyle = `rgba(255, 255, 255, ${life})`;
+                    c.lineWidth = a.size * 0.8 * life;
+                    c.stroke();
+                }
             }
 
             if (!a.finished) {
-                const r = a.size * (1 + 0.15 * Math.sin(now * 60));
-                c.shadowColor = color;
-                c.shadowBlur = 30;
-                c.fillStyle = color;
-                c.beginPath();
-                c.arc(a.x, a.y, r * 1.5, 0, Math.PI * 2);
-                c.fill();
-                c.shadowBlur = 0;
-                c.fillStyle = '#fff';
-                c.beginPath();
-                c.arc(a.x, a.y, r * 0.7, 0, Math.PI * 2);
-                c.fill();
+                const d = a.size * 9 * (1 + 0.1 * Math.sin(now * 60));
+                c.drawImage(glowSprite(a.hue), a.x - d / 2, a.y - d / 2, d, d);
             }
-            c.shadowBlur = 0;
-            c.globalCompositeOperation = 'source-over';
         },
 
         background: '#000'
@@ -300,6 +324,7 @@
         // Far enough that the whole rope is off-screen once the head reaches the exit
         margin: env => env.segLen * SEGMENTS + 60,
         sway: { amp: 5, freq: 0.22 }, // hold jitter: wide and slow, like a swinging string
+        maxDpr: 1.5,
         speed: 0.75,
         max: 2,
         gap: [1, 5],
@@ -400,7 +425,7 @@
         let raf = 0;
 
         function resize() {
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const dpr = Math.min(window.devicePixelRatio || 1, style.maxDpr);
             env.w = window.innerWidth;
             env.h = window.innerHeight;
             canvas.width = env.w * dpr;
@@ -432,7 +457,7 @@
             if (Math.random() < 0.15) {
                 // Burst: several parallel sweeps from the same side
                 const side = randInt(0, 3);
-                for (let i = randInt(2, 4), n = 0; n < i; n++) {
+                for (let i = randInt(2, 3), n = 0; n < i; n++) {
                     spawn('pass', n * rand(0.1, 0.35), { side, f: rand(0.1, 0.9) });
                 }
             } else {

@@ -1,8 +1,9 @@
-const CACHE_NAME = 'random-spinner-cache-v1';
+const CACHE_NAME = 'random-spinner-cache-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './assets/styles.css',
+  './assets/arena.js',
   './assets/script.js',
   './assets/cursor.svg'
 ];

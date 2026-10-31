@@ -52,3 +52,38 @@ body {
     pointer-events: none;
     transition: all 0.2s;
 }
+
+#arena {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+body[data-mode="lasers"],
+body[data-mode="strings"] {
+    cursor: none;
+}
+
+body[data-mode="lasers"] #arena,
+body[data-mode="strings"] #arena {
+    display: block;
+}
+
+body[data-mode="lasers"] .top-bar,
+body[data-mode="strings"] .top-bar,
+body[data-mode="lasers"] .cursor,
+body[data-mode="strings"] .cursor {
+    display: none;
+}
+
+body[data-mode="lasers"] {
+    background: #000;
+}
+
+body[data-mode="strings"] {
+    background: #fff;
+}
